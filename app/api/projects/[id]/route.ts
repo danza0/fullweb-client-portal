@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 interface Params {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -14,8 +14,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const project = await prisma.project.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         client: true,
         milestones: { orderBy: { order: 'asc' } },
@@ -45,6 +46,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await req.json()
     const {
       name,
@@ -58,7 +60,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     } = body
 
     const project = await prisma.project.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         description: description || null,
@@ -85,7 +87,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    await prisma.project.delete({ where: { id: params.id } })
+    const { id } = await params
+    await prisma.project.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('DELETE /api/projects/[id] error:', error)

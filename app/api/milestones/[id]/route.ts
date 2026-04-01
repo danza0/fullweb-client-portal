@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 interface Params {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
@@ -14,11 +14,12 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await req.json()
     const { title, description, dueDate, completed, order } = body
 
     const milestone = await prisma.milestone.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         title,
         description: description || null,
@@ -42,7 +43,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    await prisma.milestone.delete({ where: { id: params.id } })
+    const { id } = await params
+    await prisma.milestone.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('DELETE /api/milestones/[id] error:', error)

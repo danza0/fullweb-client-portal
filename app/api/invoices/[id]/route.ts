@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 interface Params {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -14,8 +14,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const invoice = await prisma.invoice.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { client: true },
     })
 
@@ -37,11 +38,12 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await req.json()
     const { amount, dueDate, status, description, paymentLink } = body
 
     const invoice = await prisma.invoice.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         amount: parseFloat(amount),
         dueDate: new Date(dueDate),
@@ -65,7 +67,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    await prisma.invoice.delete({ where: { id: params.id } })
+    const { id } = await params
+    await prisma.invoice.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('DELETE /api/invoices/[id] error:', error)

@@ -11,7 +11,7 @@ import { ArrowLeft, ExternalLink } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 async function getClientDetail(id: string) {
@@ -39,7 +39,8 @@ async function getClientDetail(id: string) {
 }
 
 export default async function ClientDetailPage({ params }: PageProps) {
-  const client = await getClientDetail(params.id)
+  const { id } = await params
+  const client = await getClientDetail(id)
   if (!client) notFound()
 
   const project = client.projects[0]
