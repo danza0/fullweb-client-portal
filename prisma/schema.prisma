@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  CLIENT
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PAID
+  PARTIALLY_PAID
+  OVERDUE
+}
+
+enum AgreementStatus {
+  PENDING
+  SIGNED
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  PROSPECT
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(CLIENT)
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client       Client?
+  activityLogs ActivityLog[]
+}
+
+model Client {
+  id           String       @id @default(cuid())
+  userId       String       @unique
+  companyName  String
+  contactName  String
+  contactEmail String
+  phone        String?
+  website      String?
+  notes        String?
+  status       ClientStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now())
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects          Project[]
+  invoices          Invoice[]
+  agreements        Agreement[]
+  welcomeDocuments  WelcomeDocument[]
+  onboardingTasks   OnboardingTask[]
+}
+
+model Project {
+  id               String        @id @default(cuid())
+  clientId         String
+  name             String
+  description      String?
+  packageName      String?
+  status           ProjectStatus @default(PLANNING)
+  scope            String?
+  startDate        DateTime?
+  estimatedEndDate DateTime?
+  kickoffLink      String?
+  kickoffDate      DateTime?
+  createdAt        DateTime      @default(now())
+
+  client          Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  invoices        Invoice[]
+  agreements      Agreement[]
+  welcomeDocuments WelcomeDocument[]
+  onboardingTasks OnboardingTask[]
+  milestones      Milestone[]
+  updates         ProjectUpdate[]
+  deliverables    Deliverable[]
+}
+
+model Invoice {
+  id          String        @id @default(cuid())
+  projectId   String?
+  clientId    String
+  amount      Float
+  dueDate     DateTime
+  status      InvoiceStatus @default(UNPAID)
+  description String?
+  paymentLink String?
+  createdAt   DateTime      @default(now())
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  client  Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model Agreement {
+  id        String          @id @default(cuid())
+  projectId String?
+  clientId  String
+  title     String
+  fileUrl   String?
+  fileName  String?
+  status    AgreementStatus @default(PENDING)
+  createdAt DateTime        @default(now())
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  client  Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model WelcomeDocument {
+  id        String   @id @default(cuid())
+  projectId String?
+  clientId  String
+  title     String
+  content   String?
+  fileUrl   String?
+  createdAt DateTime @default(now())
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  client  Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model OnboardingTask {
+  id          String   @id @default(cuid())
+  projectId   String?
+  clientId    String
+  title       String
+  description String?
+  completed   Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  client  Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model Milestone {
+  id          String   @id @default(cuid())
+  projectId   String
+  title       String
+  description String?
+  dueDate     DateTime?
+  completed   Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectUpdate {
+  id        String   @id @default(cuid())
+  projectId String
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Deliverable {
+  id          String   @id @default(cuid())
+  projectId   String
+  title       String
+  description String?
+  fileUrl     String?
+  fileName    String?
+  fileType    String?
+  createdAt   DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model TutorialArticle {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  slug      String   @unique
+  order     Int      @default(0)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  action      String
+  description String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
