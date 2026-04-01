@@ -1,7 +1,13 @@
 import { PrismaClient } from '../app/generated/prisma'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { hash } from 'bcryptjs'
 
-const prisma = new PrismaClient()
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is required for seeding')
+}
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+const prisma = new PrismaClient({ adapter })
 
 async function main() {
   console.log('🌱 Starting seed...')
